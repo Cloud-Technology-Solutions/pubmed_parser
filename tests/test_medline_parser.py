@@ -37,6 +37,7 @@ def test_parse_medline_xml_abcam():
     assert isinstance(parsed_medline, list)
     assert len(parsed_medline) == 30000, "Expect to have 30000 records"
     assert (len([p for p in parsed_medline if len(p["Title"]) > 0]) == 30000), "Expect every records to have title"
+    assert [len(elem.keys()) for elem in parsed_medline] == [14] * len(parsed_medline), "Every record should have 14 keys"
 
     assert parsed_medline[0]["Title"][0:50] == expected_title
     assert parsed_medline[0]["Abstract"][0:50] == expected_abstract
@@ -47,6 +48,7 @@ def test_parse_medline_xml_abcam():
     assert parsed_medline[31]['DOI'] == '10.1038/281646a0'
     assert parsed_medline[33]['Journal'] == 'Nature'
     assert parsed_medline[33]['JournalAbv'] == 'Nature'
+    assert parsed_medline[45]['IngestedFrom'] == 'pubmed20n0014.xml.gz'
 
 
 def test_parse_medline_grant_id():
