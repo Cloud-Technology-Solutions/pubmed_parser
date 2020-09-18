@@ -17,11 +17,8 @@ if __name__ == "__main__":
             "requests",
             "six",
             "numpy",
-            "pytest",
-            "pytest-cov",
         ],
         packages=["pubmed_parser"],
-        package_data={"pubmed_parser.data": ["*.xml.gz", "*.nxml", "*.txt"],},
         keywords=[
             'Python',
             'MEDLINE',
