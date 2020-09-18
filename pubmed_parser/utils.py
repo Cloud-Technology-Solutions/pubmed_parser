@@ -149,3 +149,14 @@ def pretty_print(node):
     Pretty print a given lxml node
     """
     print(etree.tostring(node, pretty_print=True).decode("utf-8"))
+
+
+def verify_int(value):
+    """
+    Verify that a value is a positive integer.
+    If it is not, return an empty string.
+    """
+    if value.isdigit():
+        return value
+    else:
+        return ""

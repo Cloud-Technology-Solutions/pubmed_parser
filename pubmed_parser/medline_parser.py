@@ -5,8 +5,9 @@ import re
 import numpy as np
 from itertools import chain
 from collections import defaultdict
-from pubmed_parser.utils import read_xml, stringify_children, month_or_day_formater
+from pubmed_parser.utils import read_xml, stringify_children, month_or_day_formater, verify_int
 import lxml
+from datetime import datetime
 
 __all__ = ["parse_medline_xml", "parse_medline_grant_id"]
 
@@ -28,7 +29,7 @@ def parse_pmid(pubmed_article):
     medline = pubmed_article.find("MedlineCitation")
     if medline.find("PMID") is not None:
         pmid = medline.find("PMID").text
-        return pmid
+        return verify_int(pmid)
     else:
         article_ids = pubmed_article.find("PubmedData/ArticleIdList")
         if article_ids is not None:
@@ -42,7 +43,7 @@ def parse_pmid(pubmed_article):
                 pmid = ""
         else:
             pmid = ""
-    return pmid
+    return verify_int(pmid)
 
 
 def parse_doi(pubmed_article):
@@ -437,7 +438,7 @@ def date_extractor(journal, year_info_only):
         year = ""
 
     if year_info_only or month is None:
-        return year
+        return verify_int(year)
     else:
         return "-".join(str(x) for x in filter(None, [year, month, day]))
 
@@ -485,7 +486,7 @@ def parse_references(pubmed_article, reference_list):
                     pmid = ""
             else:
                 pmid = ""
-            references.append({"citation": citation, "pmid": pmid})
+            references.append({"citation": citation, "pmid": verify_int(pmid)})
 
     if reference_list:
         return references
@@ -673,6 +674,7 @@ def parse_article_info_abcam(pubmed_article):
     year = date_extractor(journal, year_info_only)
     other_id_dict = parse_other_id(medline)
     journal_info_dict = parse_journal_info(medline)
+    dt = str(datetime.now())
 
     dict_out = {
         "PMID": pmid,
@@ -686,6 +688,7 @@ def parse_article_info_abcam(pubmed_article):
         "Year": year,
         "Authors": authors,
         "References": references,
+        "IngestionTime": dt,
         "delete": False,
     }
 
@@ -812,7 +815,7 @@ def get_medline_tree(path, to_string=False, encoding='utf-8'):
     return medline_citations
 
 
-def parse_medline_xml_abcam(path, include_deleted=False):
+def parse_medline_xml_abcam(path, include_deleted=False, include_filename=True):
     """Parse XML file frxoxm Medline XML format available at
     ftp://ftp.nlm.nih.gov/nlmdata/.medleasebaseline/gz/
 
@@ -837,7 +840,6 @@ def parse_medline_xml_abcam(path, include_deleted=False):
     --------
     >>> pubmed_parser.parse_medline_xml_abcam('data/pubmed20n0014.xml.gz')
     """
-
     medline_citations = get_medline_tree(path)
     article_list = list(
         map(lambda m: parse_article_info_abcam(m), medline_citations)
@@ -865,6 +867,11 @@ def parse_medline_xml_abcam(path, include_deleted=False):
             for p in delete_citations
         ]
         article_list.extend(dict_delete)
+
+    if include_filename:
+        filename = path.split('/')[-1]
+        for elem in article_list:
+            elem.update({'IngestedFrom': filename})
 
     return article_list
 
