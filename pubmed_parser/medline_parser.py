@@ -815,7 +815,7 @@ def get_medline_tree(path, to_string=False, encoding='utf-8'):
     return medline_citations
 
 
-def parse_medline_xml_abcam(path, include_deleted=False, include_filename=True):
+def parse_medline_xml_abcam(path, include_filename=True):
     """Parse XML file frxoxm Medline XML format available at
     ftp://ftp.nlm.nih.gov/nlmdata/.medleasebaseline/gz/
 
@@ -825,9 +825,6 @@ def parse_medline_xml_abcam(path, include_deleted=False, include_filename=True):
     ----------
     path: str
         The path
-
-    include_deleted: bool
-        If True, include the deleted articles as part of the output
 
     Return
     ------
@@ -845,35 +842,33 @@ def parse_medline_xml_abcam(path, include_deleted=False, include_filename=True):
         map(lambda m: parse_article_info_abcam(m), medline_citations)
     )
 
-    if include_deleted:
-        delete_citations = tree.findall("//DeleteCitation/PMID")
-        dict_delete = [
-
-            {
-                "PMID": p.text.strip(),
-                "PMCID": '',
-                "DOI": '',
-                "Title": '',
-                "Abstract": '',
-                "Language": '',
-                "Journal": '',
-                "JournalAbv": '',
-                "Year": '',
-                "Authors": '',
-                "References": '',
-                "delete": True,
-            }
-
-            for p in delete_citations
-        ]
-        article_list.extend(dict_delete)
-
     if include_filename:
         filename = path.split('/')[-1]
         for elem in article_list:
             elem.update({'IngestedFrom': filename})
 
     return article_list
+
+
+def get_deleted_article_pmids(path):
+    """Get the PMIDS of the deleted articles, if any.
+
+    Parameters
+    ----------
+    path: str
+        The path
+
+
+    Return
+    ------
+    article_list: list
+        A list of dictionary containing the PMIDs of the deleted articles.
+        If no deleted articles are found, `None` is returned.
+    """
+    tree = read_xml(path)
+    deleted_citations = tree.findall("//DeleteCitation/PMID")
+    deleted_dict = [{'PMID': verify_int(elem.text.strip()), 'delete': True} for elem in deleted_citations]
+    return deleted_dict
 
 
 def parse_medline_grant_id(path):
